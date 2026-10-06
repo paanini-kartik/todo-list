@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class TodoListPanel extends JPanel implements ActionListener {
     public static final String DONE = " (done)";
@@ -22,6 +23,7 @@ public class TodoListPanel extends JPanel implements ActionListener {
     public static final String SAVEFILE_TODO_LIST_JSON = SAVE_DIR + File.separator + "todo_list.json";
     private final JTextField textField;
     private final DefaultListModel<String> textModel;
+    public ArrayList<ToDoItem> items;
 
     public TodoListPanel() {
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -48,7 +50,7 @@ public class TodoListPanel extends JPanel implements ActionListener {
                                                             selectItem(textList);
                                                         }
                                                     }
-                                                    );
+        );
 
         textList.addKeyListener(new java.awt.event.KeyAdapter() {
             @Override
@@ -87,10 +89,16 @@ public class TodoListPanel extends JPanel implements ActionListener {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
             String task = jsonObject.getString("task");
             boolean completed = jsonObject.getBoolean("completed");
+            ToDoItem item;
             if (completed) {
-                task += DONE;
+                item = new ToDoItem(task, true);
             }
-            textModel.addElement(task);
+            else{
+                item = new ToDoItem(task, false);
+            }
+
+            textModel.addElement(item.toString());
+            items.add(item);
         }
     }
 
@@ -131,9 +139,9 @@ public class TodoListPanel extends JPanel implements ActionListener {
 
         for (int i = 0; i < textModel.size(); i++) {
             JSONObject jsonObject = new JSONObject();
-            String item = textModel.getElementAt(i);
-            jsonObject.put("task", item.replace(DONE, "").trim());
-            jsonObject.put("completed", item.endsWith(DONE));
+            ToDoItem item = items.get(i);
+            jsonObject.put("task", item);
+            jsonObject.put("completed", item.getDone());
             jsonArray.put(jsonObject);
         }
 
@@ -151,7 +159,9 @@ public class TodoListPanel extends JPanel implements ActionListener {
         int selectedIndex = textList.getSelectedIndex();
         if (selectedIndex != -1) {
             String selectedText = textModel.getElementAt(selectedIndex);
-            if (selectedText.endsWith(DONE)) {
+            ToDoItem item = items.get(selectedIndex);
+            item.toggleStatus();
+            if (item.getDone()) {
                 selectedText = selectedText.substring(0, selectedText.length() - DONE.length());
             } else {
                 selectedText = selectedText + DONE;
@@ -164,6 +174,7 @@ public class TodoListPanel extends JPanel implements ActionListener {
         int selectedIndex = textList.getSelectedIndex();
         if (selectedIndex != -1) {
             textModel.remove(selectedIndex);
+            items.remove(selectedIndex);
         }
     }
 
